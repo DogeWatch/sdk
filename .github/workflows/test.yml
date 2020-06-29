@@ -12,6 +12,10 @@ jobs:
     runs-on: self-hosted
     steps:
     - uses: actions/checkout@v2
+    - name: check reivew state
+      if: ${{ contains(github.event.pull_request_review.review.state, 'CHANGES_REQUESTED') }}
+      run: |
+        echo "CHANGES_REQUEST"
     - name: Install dependencies
       run: |
         python -m pip install --user --upgrade pip
@@ -20,6 +24,5 @@ jobs:
     - name: Test with pytest
       run: |
         export PATH=/home/docker/.local/bin:$PATH
-        binaryai -v
         pytest -v -n auto tests/test_others --url $BAI_URL --token $BAI_TOKEN
         pytest -v -n auto tests/test_function --url $BAI_URL --token $BAI_TOKEN
