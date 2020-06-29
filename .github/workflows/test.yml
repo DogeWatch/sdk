@@ -4,19 +4,16 @@
 name: TEST
 
 on:
-  pull_request:
+  pull_request_review:
+    types: [ submitted ]
     branches: [ test ]
 
 jobs:
   build:
+    if: ${{ contains(github.event.review.state, 'approved') }}
     runs-on: self-hosted
     steps:
     - uses: actions/checkout@v2
-    - name: check reivew state
-      env: 
-        review_state: ${{ github.event }}
-      run: |
-        echo $review_state
     - name: Install dependencies
       run: |
         python -m pip install --user --upgrade pip
