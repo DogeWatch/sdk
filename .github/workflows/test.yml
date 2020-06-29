@@ -13,8 +13,10 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: check reivew state
+      env: 
+        review_state: ${{ github.event.pull_request_review.review.state }}
       run: |
-        echo ${{ github.event.pull_request_review.review.state }}
+        echo $review_state
     - name: Install dependencies
       run: |
         python -m pip install --user --upgrade pip
