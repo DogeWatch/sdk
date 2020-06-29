@@ -35,7 +35,7 @@ class Client(object):
         except Exception as e:
             raise BinaryAIException("SDK_ERROR", "Request failed with exception: {}".format(e))
         else:
-            if response.status_code == 400:
+            if response.status_code == 401:
                 raise BinaryAIException("SDK_ERROR", "UNAUTHENTICATED: Invalid token")
             elif response.status_code == 200:
                 return session

@@ -20,5 +20,6 @@ jobs:
     - name: Test with pytest
       run: |
         export PATH=/home/docker/.local/bin:$PATH
+        binaryai -v
         pytest -v -n auto tests/test_others --url $BAI_URL --token $BAI_TOKEN
         pytest -v -n auto tests/test_function --url $BAI_URL --token $BAI_TOKEN
