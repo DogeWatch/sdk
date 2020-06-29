@@ -5,7 +5,6 @@ name: TEST
 
 on:
   pull_request_review:
-    types: [ submitted ]
     branches: [ test ]
 
 jobs:
