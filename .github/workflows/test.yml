@@ -13,9 +13,8 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: check reivew state
-      if: ${{ contains(github.event.pull_request_review.review.state, 'CHANGES_REQUESTED') }}
       run: |
-        echo "CHANGES_REQUEST"
+        echo ${{ github.event.pull_request_review.review.state }}
     - name: Install dependencies
       run: |
         python -m pip install --user --upgrade pip
