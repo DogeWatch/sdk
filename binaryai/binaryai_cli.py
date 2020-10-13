@@ -8,6 +8,12 @@ import click
 import json
 import os
 
+# diff between py2 and py3
+try:
+    FileNotFoundError
+except NameError:
+    FileNotFoundError = IOError
+
 
 def get_user_idadir():
     system = platform.system()
@@ -81,19 +87,20 @@ def QueryFunction(ctx, funcid, cfg):
     cfg_dict = json.loads(cfg.read())
     client = Client(cfg_dict['token'], cfg_dict['url'])
     result = query_function(client, funcid)
-    result.pop("sourceCode")
+    result.pop("sourceCode", None)
     result = json.dumps(result, sort_keys=True, indent=2)
     click.echo(result)
 
 
 @cli.command('create_funcset', short_help='create a new function set')
+@click.option('--name', '-n', help='funcset name', type=str, required=True)
 @click.option('--cfg', '-c', help='binaryai configuration file', type=click.File(), show_default=True,
               default=os.path.join(get_user_idadir(), "cfg", "{}.cfg".format(binaryai.__name__)))
 @click.pass_context
-def CreateFuncSet(ctx, cfg):
+def CreateFuncSet(ctx, cfg, name):
     cfg_dict = json.loads(cfg.read())
     client = Client(cfg_dict['token'], cfg_dict['url'])
-    result = create_function_set(client)
+    result = create_function_set(client, name)
     click.echo(json.dumps({"funcsetid": result}))
 
 
@@ -110,17 +117,20 @@ def QueryFuncSet(ctx, funcset, cfg):
 
 
 @cli.command('upload_functions', short_help='upload the functions of the chosen file')
-@click.option('--file', '-f', help='file to be uploaded', type=click.File(), required=True)
-@click.option('--funcset', '-s', help='funcset id', type=str, required=True)
-@click.option('--idat', '-i', help='path of idat/idat64', type=click.File(), required=True)
+@click.option('--file', '-f', help='file to be uploaded', type=str, required=True)
+@click.option('--idat', '-i', help='path of idat/idat64', type=str, required=True)
+@click.option('--funcset', '-s', help='function set you want to upload to', type=str, required=False, default='')
 @click.pass_context
-def UploadFunctions(ctx, file, funcset, idat):
+def UploadFunctions(ctx, file, idat, funcset):
     plugin_path = get_plugin_path()
     log_path = os.path.join(get_user_idadir(), "log.txt")
-    cmd_str = '"{}" -L"{}" -A -S"{} {} 1" {}'.format(idat.name, log_path, plugin_path, funcset, file.name)
+    cmd_str = '"{}" -L"{}" -A -S"{} 1 {}" {}'.format(idat, log_path, plugin_path, funcset, file)
     try:
-        p = subprocess.Popen(cmd_str)
-        p.wait()
+        p = subprocess.Popen(cmd_str, shell=True)
+        retcode = p.wait()
+        if retcode != 0:
+            print("Upload functions fail, please check {} for more detials".format(log_path))
+            ctx.exit()
     except FileNotFoundError as e:
         print(e)
         ctx.exit()
@@ -137,7 +147,14 @@ def MatchFunctions(ctx, file, idat):
     cmd_str = '"{}" -L"{}" -A -S"{} 2" {}'.format(idat, log_path, plugin_path, file)
     try:
         p = subprocess.Popen(cmd_str, shell=True)
-        p.wait()
+        retcode = p.wait()
+        if retcode != 0:
+            print("Match functions fail, please check {} for more details".format(log_path))
+            ctx.exit()
+        # print idb store path
+        idat_base = os.path.splitext(idat)[0]
+        idb_or_i64 = "idb" if idat_base.endswith("idat") else "i64"
+        print("idb file is stored in {}.{}".format(os.path.abspath(file), idb_or_i64))
     except FileNotFoundError as e:
         print(e)
         ctx.exit()
